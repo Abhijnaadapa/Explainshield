@@ -11,7 +11,8 @@ if sys.platform == "win32":
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 from database.mongodb import connect_to_mongo, close_mongo_connection
-from routers import claims, onboarding, audit # Coming soon
+from routers import claims, onboarding, audit
+from utils.auth import create_access_token
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -36,14 +37,7 @@ app = FastAPI(
 # Middleware: CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,6 +67,12 @@ async def root():
 app.include_router(onboarding.router, prefix="/api/onboarding", tags=["Onboarding"])
 app.include_router(claims.router, prefix="/api/claims", tags=["Audit Pipeline"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Compliance Reporting"])
+
+@app.get("/api/token")
+async def get_token():
+    """Generate a demo token for testing"""
+    token = create_access_token({"company_id": "demo_audit_corp", "sub": "auditor@explainshield.ai"})
+    return {"token": token}
 
 if __name__ == "__main__":
     import uvicorn

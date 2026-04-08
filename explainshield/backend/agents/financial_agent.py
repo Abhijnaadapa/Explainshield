@@ -2,8 +2,8 @@ import requests
 import json
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL = "llama3"
-TIMEOUT = 60  # Short timeout - fallback if Ollama is slow
+MODEL = "llama3.2"
+TIMEOUT = 120
 
 # Realistic fallback templates when Ollama is unavailable
 FINANCIAL_FALLBACKS = [

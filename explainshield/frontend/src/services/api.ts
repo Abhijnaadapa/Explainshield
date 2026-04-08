@@ -3,35 +3,59 @@ import { AuditResult, AuditStats } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
-// In-memory token storage (per user request)
 let authToken: string | null = null;
+let tokenPromise: Promise<string> | null = null;
+
+const getToken = async (): Promise<string> => {
+  if (authToken) return authToken;
+  if (tokenPromise) return tokenPromise;
+  
+  tokenPromise = (async () => {
+    const response = await axios.get('http://localhost:8000/api/token');
+    authToken = response.data.token;
+    return authToken;
+  })();
+  
+  return tokenPromise;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Set hardcoded token for demo (In real app, this is set after login)
 export const setAuthToken = (token: string) => {
   authToken = token;
 };
 
-api.interceptors.request.use((config) => {
-  if (authToken) {
-    config.headers.Authorization = `Bearer ${authToken}`;
-  }
+api.interceptors.request.use(async (config) => {
+  const token = await getToken();
+  config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-export const auditService = {
-  auditClaim: async (features: any, decision: string, confidence: number): Promise<AuditResult> => {
-    const response = await api.post('/claims/audit', {
-      input_features: features,
-      model_decision: decision,
-      model_confidence: confidence,
-    });
+export const claimsService = {
+  listClaims: async (limit = 50): Promise<any> => {
+    const response = await api.get('/claims', { params: { limit } });
     return response.data;
   },
+  
+  getClaim: async (claimId: string): Promise<any> => {
+    const response = await api.get(`/claims/${claimId}`);
+    return response.data;
+  },
+  
+  seedClaims: async (): Promise<any> => {
+    const response = await api.post('/claims/seed');
+    return response.data;
+  },
+  
+  auditClaim: async (claimId: string): Promise<AuditResult> => {
+    const response = await api.post(`/claims/audit/${claimId}`);
+    return response.data;
+  },
+};
 
+export const auditService = {
   getAuditLogs: async (limit = 10): Promise<any[]> => {
     const response = await api.get('/audit/logs', { params: { limit } });
     return response.data;

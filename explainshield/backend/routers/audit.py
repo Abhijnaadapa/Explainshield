@@ -26,12 +26,12 @@ async def get_audit_logs(
 async def get_audit_stats(company: dict = Depends(get_current_company)):
     """
     Computes summary statistics for the dashboard.
+    Includes time-series data for trend visualization.
     """
     company_id = company["company_id"]
     db = Database.get_database()
     audit_coll = db[f"company_{company_id}_audit_logs"]
     
-    # Aggregation Pipeline
     pipeline = [
         {"$group": {
             "_id": None,
@@ -39,14 +39,33 @@ async def get_audit_stats(company: dict = Depends(get_current_company)):
             "total_audits": {"$sum": 1},
             "bias_events": {"$sum": {"$cond": ["$results.bias_flag", 1, 0]}},
             "compliance_failures": {"$sum": {"$cond": [{"$eq": ["$results.compliance", "NON_COMPLIANT"]}, 1, 0]}}
-        }}
+        }},
+        {"$project": {"_id": 0}}
     ]
     
     stats = await audit_coll.aggregate(pipeline).to_list(length=1)
     if not stats:
-        return {"avg_trust_score": 0, "total_audits": 0, "bias_events": 0, "compliance_failures": 0}
-        
-    return stats[0]
+        return {
+            "avg_trust_score": 0, "total_audits": 0,
+            "bias_events": 0, "compliance_failures": 0,
+            "time_series": []
+        }
+    
+    time_series_pipeline = [
+        {"$sort": {"timestamp": 1}},
+        {"$project": {
+            "_id": 0,
+            "timestamp": 1,
+            "trust_score": "$results.trust_score",
+            "verdict": "$results.verdict"
+        }}
+    ]
+    time_series = await audit_coll.aggregate(time_series_pipeline).to_list(length=50)
+    
+    return {
+        **stats[0],
+        "time_series": time_series
+    }
 
 @router.get("/compliance-report")
 async def get_compliance_report(company: dict = Depends(get_current_company)):
@@ -57,14 +76,14 @@ async def get_compliance_report(company: dict = Depends(get_current_company)):
     db = Database.get_database()
     audit_coll = db[f"company_{company_id}_audit_logs"]
     
-    # Total violation counts across logs
-    cursor = audit_coll.find({"results.compliance": {"$ne": "COMPLIANT"}})
+    cursor = audit_coll.find({"results.compliance": {"$ne": "COMPLIANT"}}, {"_id": 0})
     failed_audits = await cursor.to_list(length=100)
     
     summary = {}
     for audit in failed_audits:
-        for v in audit['results']['violations']:
-            guideline = v['guideline']
+        violations = audit.get('results', {}).get('violations', [])
+        for v in violations:
+            guideline = v.get('guideline', 'UNKNOWN')
             summary[guideline] = summary.get(guideline, 0) + 1
             
     return {
@@ -87,7 +106,8 @@ async def get_crdi_report(company: dict = Depends(get_current_company)):
         {"$group": {
             "_id": None,
             "mean_crdi_gender": {"$avg": "$results.scores.crdi_gender"}
-        }}
+        }},
+        {"$project": {"_id": 0}}
     ]
     
     result = await audit_coll.aggregate(pipeline).to_list(length=1)

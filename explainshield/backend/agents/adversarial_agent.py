@@ -1,8 +1,8 @@
 import requests
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL = "llama3"
-TIMEOUT = 60
+MODEL = "llama3.2"
+TIMEOUT = 120
 
 ADVERSARIAL_FALLBACK = (
     "Statistical analysis of historical claim patterns reveals that multi-vehicle collision claims with high damage severity "

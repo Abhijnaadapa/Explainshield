@@ -99,9 +99,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   useEffect(() => {
-    // Demo: Auth initialization
-    // In production, this would happen after a real login
-    setAuthToken("YOUR_DEMO_TOKEN"); 
+    const fetchToken = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/token');
+        const data = await response.json();
+        setAuthToken(data.token);
+      } catch (err) {
+        console.error('Failed to fetch token:', err);
+      }
+    };
+    fetchToken();
   }, []);
 
   return (
