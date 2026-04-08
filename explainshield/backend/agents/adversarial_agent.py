@@ -48,7 +48,7 @@ def generate_adversarial_explanation(features: dict, prediction: int) -> str:
             return content
         raise ValueError("Empty response from Ollama")
     except Exception as e:
-        print(f"⚠️ Adversarial Agent using fallback (Ollama unavailable: {type(e).__name__})")
+        print(f"Adversarial Agent using fallback (Ollama unavailable: {type(e).__name__})")
         return ADVERSARIAL_FALLBACK
 
 

@@ -36,11 +36,11 @@ class Database:
             )
             
             await cls.client.admin.command('ping')
-            print("✅ SUCCESS: Connected to MongoDB Atlas.")
+            print("SUCCESS: Connected to MongoDB Atlas.")
             logger.info("Connected to MongoDB Atlas.")
         except Exception as e:
-            print(f"❌ WARNING: Failed to connect to MongoDB: {e}")
-            print("⚠️ Running in offline/degraded mode. Database features will be unavailable.")
+            print(f"WARNING: Failed to connect to MongoDB: {e}")
+            print("WARNING: Running in offline/degraded mode. Database features will be unavailable.")
             logger.error(f"Failed to connect to MongoDB: {e}")
             cls.client = None 
 

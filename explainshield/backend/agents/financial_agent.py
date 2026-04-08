@@ -53,7 +53,7 @@ def generate_financial_explanation(features: dict, prediction: int, shap_top_fea
             return content
         raise ValueError("Empty response from Ollama")
     except Exception as e:
-        print(f"⚠️ Financial Agent using fallback (Ollama unavailable: {type(e).__name__})")
+        print(f"Financial Agent using fallback (Ollama unavailable: {type(e).__name__})")
         # Return a realistic fallback using actual feature values
         claim_amt = features.get("total_claim_amount", "N/A")
         premium = features.get("policy_annual_premium", "N/A")

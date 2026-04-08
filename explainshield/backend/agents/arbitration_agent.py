@@ -72,7 +72,7 @@ def generate_arbitration(
             return content
         raise ValueError("Empty response from Ollama")
     except Exception as e:
-        print(f"⚠️ Arbitration Agent using fallback (Ollama unavailable: {type(e).__name__})")
+        print(f"Arbitration Agent using fallback (Ollama unavailable: {type(e).__name__})")
         return ARBITRATION_FALLBACK
 
 

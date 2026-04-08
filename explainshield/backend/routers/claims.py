@@ -167,7 +167,7 @@ async def audit_claim(
         # Optional: Run Arbitration if bias is detected
         arbitration_report = None
         if validation_results['bias']['bias_detected'] or compliance_results['overall_status'] != "COMPLIANT":
-            print("⚖️ [ARB] Bias/Compliance Risk Detected. Triggering Senior Arbitration Agent...")
+            print("[ARB] Bias/Compliance Risk Detected. Triggering Senior Arbitration Agent...")
             # Using to_thread for blocking LLM call
             arbitration_report = await asyncio.to_thread(
                 generate_arbitration,
@@ -181,7 +181,7 @@ async def audit_claim(
             )
             
         # 8. Trust Scoring (Step 10)
-        print("📊 [6/6] Finalizing Trust Score & Audit Verdict...")
+        print("[6/6] Finalizing Trust Score & Audit Verdict...")
         trust_results = compute_trust_score(
             validation_results['faithfulness']['faithfulness_score'],
             validation_results['bias']['bias_score'],
@@ -195,7 +195,7 @@ async def audit_claim(
         )
         
         # 11. Persistence (Step 11) - Build record first, then attempt DB save
-        print("💾 Attempting to save audit report to MongoDB isolated collection...")
+        print("[DB] Attempting to save audit report to MongoDB isolated collection...")
         
         audit_record = {
             "claim_id": claim_id,
@@ -227,13 +227,13 @@ async def audit_claim(
             db = Database.get_database()
             audit_coll = db[f"company_{company_id}_audit_logs"]
             await audit_coll.insert_one(audit_record)
-            print("✅ Audit record saved successfully.")
+            print("[OK] Audit record saved successfully.")
         except Exception as db_err:
-            print(f"⚠️ Persistence Warning: Could not save audit to MongoDB: {db_err}")
+            print(f"[WARN] Persistence Warning: Could not save audit to MongoDB: {db_err}")
             # Non-fatal: audit results are still returned to the user
             
         # 12. Return Audit Result (Step 12)
-        print(f"✅ Audit Completed. Score: {trust_results['trust_score']} | Status: {trust_results['verdict']}")
+        print(f"[DONE] Audit Completed. Score: {trust_results['trust_score']} | Status: {trust_results['verdict']}")
         
         return {
             "claim_id": claim_id,
@@ -260,6 +260,6 @@ async def audit_claim(
         }
 
     except Exception as e:
-        print(f"❌ PIPELINE ERROR: {e}")
+        print(f"[ERROR] PIPELINE ERROR: {e}")
         logger.error(f"Audit Pipeline Failed for {claim_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
